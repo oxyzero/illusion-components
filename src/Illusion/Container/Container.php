@@ -66,19 +66,23 @@ class Container implements ArrayAccess
 
         $reflect = new ReflectionClass($class);
 
-        if ( ! $reflect->isInstantiable()) {
+        if (! $reflect->isInstantiable()) {
             throw new Exception(sprintf('"%s" is not instantiable.'));
         }
 
-        if ( ! is_null($reflect->getConstructor())) {
+        if (! is_null($reflect->getConstructor())) {
             $dependencies = $reflect->getConstructor()->getParameters();
 
             foreach ($dependencies as $dependency) {
-                if ($dependency->isArray() || $dependency->isOptional()) continue;
+                if ($dependency->isArray() || $dependency->isOptional()) {
+                    continue;
+                }
 
                 $class = $dependency->getClass();
 
-                if (is_null($class)) continue;
+                if (is_null($class)) {
+                    continue;
+                }
 
                 array_unshift($args, $this->resolve($class->name));
             }
@@ -136,7 +140,7 @@ class Container implements ArrayAccess
      */
     public function offsetGet($key)
     {
-        if ( ! $this->has($key)) {
+        if (! $this->has($key)) {
             return null;
         }
 
@@ -173,7 +177,8 @@ class Container implements ArrayAccess
      * @param  string $key
      * @return void
      */
-    public function offsetUnset($key) {
+    public function offsetUnset($key)
+    {
         if ($this->has($key)) {
             unset($this->bindings[$key]);
         }
