@@ -76,4 +76,14 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
     }
 
+    public function testClosureResolveWithParameter()
+    {
+        $this->c->register('bar', function($container) {
+            $container->register('foo', 'Foo');
+            return new Bar($container->resolve('foo'));
+        });
+
+        $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
+    }
+
 }

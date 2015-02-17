@@ -100,7 +100,7 @@ class Container implements ArrayAccess
      */
     protected function closure($callback, $args = [])
     {
-        return call_user_func_array($callback, array());
+        return call_user_func_array($callback, array($this));
     }
 
     /**
