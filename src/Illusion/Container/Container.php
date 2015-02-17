@@ -8,7 +8,11 @@ use ReflectionClass;
 
 class Container implements ArrayAccess
 {
-    private $bindings = [];
+    /**
+     * The registered bindings.
+     * @var array
+     */
+    protected $bindings = [];
 
     /**
      * Instanciates a new Container.
@@ -25,8 +29,15 @@ class Container implements ArrayAccess
      * @param  mixed  $value
      * @return void
      */
-    public function register($key, $value)
+    public function register($key, $value = null)
     {
+        // If the value is null, then we are going to
+        // look for a class name that has the same name
+        // as the key.
+        if (is_null($value)) {
+            $value = ucfirst($key);
+        }
+
         $this->offsetSet($key, $value);
     }
 

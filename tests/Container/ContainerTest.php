@@ -49,6 +49,12 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertNull($this->c->get('qux'));
     }
 
+    public function testResolveBindingWithNoValue()
+    {
+        $this->c->register('Foo');
+        $this->assertInstanceOf('Foo', $this->c->resolve('Foo'));
+    }
+
     public function testDirectResolve()
     {
         $this->c->register('foo', 'Foo');
