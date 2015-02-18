@@ -3,7 +3,7 @@
 class Foo {}
 
 class Bar {
-    public function __construct(Foo $foo) {}
+    public function __construct(\Foo $foo) {}
 }
 
 use Illusion\Container\Container;
@@ -25,7 +25,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testOffsets()
     {
         $this->c['foo'] = 'bar';
-        $this->assertEquals('bar', $this->c['foo']);
+        $this->assertInstanceOf('\Bar', $this->c['foo']);
         $this->assertTrue($this->c->has('foo'));
         unset($this->c['foo']);
         $this->assertFalse($this->c->has('foo'));
@@ -35,13 +35,12 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     {
         $this->c->register('foo', 'Bar');
         $this->assertTrue($this->c->has('foo'));
-        $this->assertEquals('Bar', $this->c->get('foo'));
     }
 
     public function testBindingValue()
     {
         $this->c->register('foo', 'Bar');
-        $this->assertEquals('Bar', $this->c->get('foo'));
+        $this->assertEquals(['value' => '\Bar', 'shared' => false], $this->c->get('foo'));
     }
 
     public function testReturningNullWhenBindingDoesnExist()
@@ -58,12 +57,12 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testDirectResolve()
     {
         $this->c->register('foo', 'Foo');
-        $this->c->resolve('foo');
-        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
+        $fooInstance = $this->c->resolve('foo');
+        $this->assertInstanceOf('Foo', $fooInstance);
 
         $this->c->register('bar', 'Bar');
-        $this->c->resolve('bar');
-        $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
+        $barInstance = $this->c->resolve('bar');
+        $this->assertInstanceOf('Bar', $barInstance);
     }
 
     public function testClosureResolve()
@@ -92,4 +91,13 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
     }
 
+    public function testSharedInstances()
+    {
+        $this->c->register('foo', '\Foo');
+
+        $fooInstance  = $this->c->resolve('foo');
+        $fooInstance2 = $this->c->resolve('foo');
+
+        $this->assertTrue($fooInstance === $fooInstance2);
+    }
 }

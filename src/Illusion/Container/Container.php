@@ -15,6 +15,12 @@ class Container implements ArrayAccess
     protected $bindings = [];
 
     /**
+     * The registered shared instances.
+     * @var array
+     */
+    protected $instances = [];
+
+    /**
      * Instanciates a new Container.
      * @param array $args
      */
@@ -29,8 +35,16 @@ class Container implements ArrayAccess
      * @param  mixed  $value
      * @return void
      */
-    public function register($key, $value = null)
+    public function register($key, $value = null, $shared = false)
     {
+
+        // If the value is a string
+        // then we're going to interpret it as a namespace
+        // that points into a class.
+        if (is_string($value) && ! $this->hasMissingBackSlash($value)) {
+            $value = '\\' . $value;
+        }
+
         // If the value is null, then we are going to
         // look for a class name that has the same name
         // as the key.
@@ -38,7 +52,7 @@ class Container implements ArrayAccess
             $value = ucfirst($key);
         }
 
-        $this->offsetSet($key, $value);
+        $this->bindings[$key] = compact('value', 'shared');
     }
 
     /**
@@ -49,19 +63,26 @@ class Container implements ArrayAccess
      */
     public function resolve($key, $args = [])
     {
-        $class = $this->get($key);
+        $object = $this->getValue($key);
 
-        if ($class === null) {
-            $class = $key;
+        if (isset($this->instances[$key]))
+        {
+            return $this->instances[$key];
         }
 
-        if (is_string($class)) {
-            return $this->direct($class);
+        if ($object === null) {
+            $object = $key;
         }
 
-        if ($class instanceof Closure) {
-            return $this->closure($class);
+        if (is_string($object)){
+            $object = $this->resolveClass($object);
+        } else {
+            if ($object instanceof Closure) {
+                $object = $this->resolveClosure($object);
+            }
         }
+
+        return $this->instances[$key] = $object;
     }
 
     /**
@@ -71,7 +92,7 @@ class Container implements ArrayAccess
      * @param array  $args
      * @return mixed
      */
-    protected function direct($class)
+    protected function resolveClass($class)
     {
         $args = [];
 
@@ -95,6 +116,8 @@ class Container implements ArrayAccess
                     continue;
                 }
 
+
+
                 array_unshift($args, $this->resolve($class->name));
             }
         }
@@ -109,9 +132,39 @@ class Container implements ArrayAccess
      * @param array  $args
      * @return mixed
      */
-    protected function closure($callback, $args = [])
+    protected function resolveClosure($callback, $args = [])
     {
         return call_user_func_array($callback, array($this));
+    }
+
+    /**
+     * Gets the value of a given binding.
+     * @param  string $key
+     * @return mixed
+     */
+    protected function getValue($key)
+    {
+        return $this->has($key) ? $this->bindings[$key]['value'] : null;
+    }
+
+    /**
+     * Checks if the given binding is a shared instance.
+     * @param  string $key
+     * @return boolean
+     */
+    protected function isShared($key)
+    {
+        return $this->has($key) && $this->bindings[$key]['shared'] === true;
+    }
+
+    /**
+     * Checks if a binding class has a missing backslash.
+     * @param  string $key
+     * @return boolean
+     */
+    protected function hasMissingBackslash($key)
+    {
+        return substr($key, 0, 1) === '\\';
     }
 
     /**
@@ -121,7 +174,11 @@ class Container implements ArrayAccess
      */
     public function get($key)
     {
-        return $this->offsetGet($key);
+        if (! $this->has($key)) {
+            return null;
+        }
+
+        return $this->bindings[$key];
     }
 
     /**
@@ -141,7 +198,9 @@ class Container implements ArrayAccess
      */
     public function delete($key)
     {
-        $this->offsetUnset($key);
+        if ($this->has($key)) {
+            unset($this->bindings[$key]);
+        }
     }
 
     /**
@@ -151,11 +210,7 @@ class Container implements ArrayAccess
      */
     public function offsetGet($key)
     {
-        if (! $this->has($key)) {
-            return null;
-        }
-
-        return $this->bindings[$key];
+        return $this->resolve($key);
     }
 
     /**
@@ -166,11 +221,7 @@ class Container implements ArrayAccess
      */
     public function offsetSet($key, $value)
     {
-        if (is_null($key)) {
-            $this->bindings[] = $value;
-        } else {
-            $this->bindings[$key] = $value;
-        }
+        $this->register($key, $value, false);
     }
 
     /**
@@ -180,7 +231,7 @@ class Container implements ArrayAccess
      */
     public function offsetExists($key)
     {
-        return isset($this->bindings[$key]);
+        return $this->has($key);
     }
 
     /**
@@ -190,8 +241,6 @@ class Container implements ArrayAccess
      */
     public function offsetUnset($key)
     {
-        if ($this->has($key)) {
-            unset($this->bindings[$key]);
-        }
+        $this->delete($key);
     }
 }
