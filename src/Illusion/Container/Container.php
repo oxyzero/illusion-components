@@ -108,7 +108,57 @@ class Container implements ArrayAccess
             $this->instances[$key] = $object;
         }
 
-        return $object;
+        return $this->setValue($key, $object);
+    }
+
+    /**
+     * Registers an already defined instance as
+     * a shared instance in the container.
+     * @param  string $key
+     * @param  object $instance
+     * @param  boolean $shared
+     * @return void
+     */
+    public function instance($key, $instance, $shared = true)
+    {
+        $this->bindings[$key] = [ 'value' => $instance, 'shared' => $shared ];
+
+        if ($shared) {
+            $this->instances[$key] = $instance;
+        }
+    }
+
+    /**
+     * Extend a binding.
+     * @param  string $key
+     * @param  Closure $closure [description]
+     * @return mixed
+     */
+    public function extend($key, $closure)
+    {
+        if (! $this->has($key)) {
+            return new \InvalidArgumentException(
+                sprintf('The binding "%s" isn\'t registered in the container.', $key)
+            );
+        }
+
+        if (! is_object($this->getValue($key))) {
+            return new \InvalidArgumentException(
+                sprintf('The binding "%s" does not have a object definition.', $key)
+            );
+        }
+
+        if (! $closure instanceof Closure) {
+            return new \InvalidArgumentException(
+                'The extension definition is not a Closure.'
+            );
+        }
+
+        $value = $this->getValue($key);
+
+        $extension = $this->resolveClosure($closure, [ $value ]);
+
+        return $this->setValue($key, $extension);
     }
 
     /**
@@ -125,7 +175,7 @@ class Container implements ArrayAccess
         $reflect = new ReflectionClass($class);
 
         if (! $reflect->isInstantiable()) {
-            throw new Exception(sprintf('"%s" is not instantiable.'));
+            throw new Exception(sprintf('"%s" is not instantiable.', $class));
         }
 
         if (! is_null($reflect->getConstructor())) {
@@ -141,8 +191,6 @@ class Container implements ArrayAccess
                 if (is_null($class)) {
                     continue;
                 }
-
-
 
                 array_unshift($args, $this->resolve($class->name));
             }
@@ -160,7 +208,22 @@ class Container implements ArrayAccess
      */
     protected function resolveClosure($callback, $args = [])
     {
-        return call_user_func_array($callback, array($this));
+        // Allow the container to be
+        // within the last position of the arguments.
+        $args[] = $this;
+
+        return call_user_func_array($callback, $args);
+    }
+
+    /**
+     * Assings a value into a binding.
+     * @param string $key
+     * @param mixed $value
+     * @return mixed
+     */
+    protected function setValue($key, $value)
+    {
+        return $this->bindings[$key]['value'] = $value;
     }
 
     /**

@@ -1,9 +1,27 @@
 <?php
 
-class Foo {}
+class Foo {
+    public function give($amount)
+    {
+        return $amount;
+    }
+}
 
 class Bar {
-    public function __construct(\Foo $foo) {}
+    protected $qux;
+
+    public function __construct(\Foo $foo) {
+        $this->set($foo->give(1));
+    }
+
+    public function get()
+    {
+        return $this->qux;
+    }
+
+    public function set($qux) {
+        $this->qux = $qux;
+    }
 }
 
 use Illusion\Container\Container;
@@ -104,6 +122,29 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($fooInstance === $fooInstance2);
         $this->assertTrue($barInstance === $barInstance2);
+    }
+
+    public function testBindAlreadyInstantiatedObject()
+    {
+        $foo = new \Foo;
+        $this->c->instance('foo', $foo);
+        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
+    }
+
+    public function testExtendingServices()
+    {
+        $this->c->register('bar', '\Bar');
+
+        $this->c->resolve('bar');
+
+        $this->c->extend('bar', function($bar, $c) {
+            $bar->set(5);
+            $c->register('foo', '\Foo');
+            return $bar;
+        });
+
+        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
+        $this->assertEquals(5, $this->c['bar']->get());
     }
 
 }
