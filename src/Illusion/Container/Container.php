@@ -56,6 +56,30 @@ class Container implements ArrayAccess
     }
 
     /**
+     * Generate a binding that has a shared instance.
+     * @param  string $key
+     * @param  mixed $value
+     * @return void
+     */
+    public function singleton($key, $value = null)
+    {
+        $this->register($key, $value, true);
+    }
+
+    /**
+     * Alias of singleton.
+     * Generate a binding that has a shared instance.
+     * @param  string $key
+     * @param  mixed $value
+     * @return void
+     * @see singleton()
+     */
+    public function share($key, $value = null)
+    {
+        $this->singleton($key, $value);
+    }
+
+    /**
      * Resolves a binding in the Container.
      * @param  string $key
      * @param  array  $args
@@ -82,7 +106,11 @@ class Container implements ArrayAccess
             }
         }
 
-        return $this->instances[$key] = $object;
+        if ($this->isShared($key)) {
+            $this->instances[$key] = $object;
+        }
+
+        return $object;
     }
 
     /**
