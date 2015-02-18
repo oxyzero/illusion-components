@@ -89,8 +89,7 @@ class Container implements ArrayAccess
     {
         $object = $this->getValue($key);
 
-        if (isset($this->instances[$key]))
-        {
+        if (isset($this->instances[$key])) {
             return $this->instances[$key];
         }
 
@@ -98,7 +97,7 @@ class Container implements ArrayAccess
             $object = $key;
         }
 
-        if (is_string($object)){
+        if (is_string($object)) {
             $object = $this->resolveClass($object);
         } else {
             if ($object instanceof Closure) {
