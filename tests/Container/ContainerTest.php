@@ -94,11 +94,16 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testSharedInstances()
     {
         $this->c->singleton('foo', '\Foo');
+        $this->c->share('bar', '\Bar');
 
         $fooInstance  = $this->c->resolve('foo');
         $fooInstance2 = $this->c->resolve('foo');
 
+        $barInstance  = $this->c->resolve('bar');
+        $barInstance2 = $this->c->resolve('bar');
+
         $this->assertTrue($fooInstance === $fooInstance2);
+        $this->assertTrue($barInstance === $barInstance2);
     }
 
 }

@@ -37,19 +37,18 @@ class Container implements ArrayAccess
      */
     public function register($key, $value = null, $shared = false)
     {
+        // If the value is null, then we are going to
+        // look for a class name that has the same name
+        // as the key.
+        if (is_null($value)) {
+            $value = ucfirst($key);
+        }
 
         // If the value is a string
         // then we're going to interpret it as a namespace
         // that points into a class.
         if (is_string($value) && ! $this->hasMissingBackSlash($value)) {
             $value = '\\' . $value;
-        }
-
-        // If the value is null, then we are going to
-        // look for a class name that has the same name
-        // as the key.
-        if (is_null($value)) {
-            $value = ucfirst($key);
         }
 
         $this->bindings[$key] = compact('value', 'shared');
