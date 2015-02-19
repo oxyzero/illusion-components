@@ -5,6 +5,7 @@ namespace Illusion\Container;
 use Closure;
 use ArrayAccess;
 use ReflectionClass;
+use InvalidArgumentException;
 
 class Container implements ArrayAccess
 {
@@ -22,8 +23,21 @@ class Container implements ArrayAccess
 
     /**
      * The registered protected parameters.
+     * @var array
      */
     protected $protected = [];
+
+    /**
+     * The registered resolved bindings.
+     * @var array
+     */
+    protected $resolved = [];
+
+    /**
+     * The registered binding extensions.
+     * @var array
+     */
+    protected $extensions = [];
 
     /**
      * Registers a binding in the Container.
@@ -82,30 +96,84 @@ class Container implements ArrayAccess
      */
     public function resolve($key, $args = [])
     {
-        $object = $this->getValue($key);
-
         if (isset($this->instances[$key])) {
             return $this->instances[$key];
         }
+
+        $object = $this->getValue($key);
 
         if ($object === null) {
             $object = $key;
         }
 
-        if (is_string($object)) {
-            $object = $this->resolveClass($object, $args);
-        } else {
-            if ($object instanceof Closure) {
-                $object = $this->resolveClosure($object, $args);
-            }
+        // If the object is not buildable it means
+        // that it is already an instance, so we have to
+        // get it's class name and provide a new instance.
+        if (! $this->isBuildable($object)) {
+            $object = $this->getClassName($object);
+        }
+
+        $object = $this->build($object, $args);
+
+        // Apply all of the extensions into the object.
+        foreach($this->getExtensions($key) as $extension) {
+            $object = $this->resolveClosure($extension, [ $object ]);
         }
 
         if ($this->isShared($key)) {
             $this->instances[$key] = $object;
         }
 
+        $this->resolved[$key] = true;
 
-        return $this->setValue($key, $object);
+        return $object;
+    }
+
+    /**
+     * Get the extensions of a given binding.
+     * @param  string $key
+     * @return array
+     */
+    protected function getExtensions($key)
+    {
+        return isset($this->extensions[$key]) ? $this->extensions[$key] : [];
+    }
+
+    /**
+     * Returns the class name of an instance.
+     * @param  object $class
+     * @return string
+     */
+    protected function getClassName($class)
+    {
+        $class = new ReflectionClass($class);
+
+        return $class->getName();
+    }
+
+    /**
+     * Checks if the given value is buildable.
+     * @param  mixed $key
+     * @return boolean
+     */
+    protected function isBuildable($value)
+    {
+        return is_string($value) || $this->isClosure($value);
+    }
+
+    /**
+     * Builds an instance.
+     * @param  mixed $key
+     * @param  array $args
+     * @return mixed
+     */
+    protected function build($key, $args = [])
+    {
+        if ($this->isClosure($key)) {
+            return $this->resolveClosure($key, $args);
+        }
+
+        return $this->resolveClass($key, $args);
     }
 
     /**
@@ -123,6 +191,40 @@ class Container implements ArrayAccess
         if ($shared) {
             $this->instances[$key] = $instance;
         }
+    }
+
+    /**
+     * Removes an instance from the container to allow
+     * to instantiate it again.
+     * @param  string $key
+     * @return void
+     */
+    public function deleteInstance($key)
+    {
+        unset($this->instances[$key]);
+    }
+
+    /**
+     * Removes all instances from the container to allow
+     * to instantiate them again.
+     * @return void
+     */
+    public function deleteInstances()
+    {
+        $this->instances = [];
+    }
+
+    /**
+     * Releases all of the bindings and instances.
+     * @return void
+     */
+    public function flush()
+    {
+        $this->bindings   = [];
+        $this->resolved   = [];
+        $this->instances  = [];
+        $this->extensions = [];
+        $this->protected  = [];
     }
 
     /**
@@ -150,7 +252,7 @@ class Container implements ArrayAccess
             return null;
         }
 
-        if ($object instanceof Closure) {
+        if ($this->isClosure($object)) {
             $object = $this->resolveClosure($object, $args);
         }
 
@@ -166,28 +268,32 @@ class Container implements ArrayAccess
     public function extend($key, $closure)
     {
         if (! $this->has($key)) {
-            return new \InvalidArgumentException(
+            return new InvalidArgumentException(
                 sprintf('The binding "%s" isn\'t registered in the container.', $key)
             );
         }
 
-        if (! is_object($this->getValue($key))) {
-            return new \InvalidArgumentException(
-                sprintf('The binding "%s" does not have a object definition.', $key)
-            );
-        }
-
-        if (! $closure instanceof Closure) {
-            return new \InvalidArgumentException(
+        if (! $this->isClosure($closure)) {
+            return new InvalidArgumentException(
                 'The extension definition is not a Closure.'
             );
         }
 
-        $value = $this->getValue($key);
+        if ($this->isShared($key)) {
+            $object = $this->instances[$key];
+        } else {
+            $object = $this->resolve($key);
+        }
 
-        $extension = $this->resolveClosure($closure, [ $value ]);
+        $this->extensions[$key][] = $closure;
 
-        return $this->setValue($key, $extension);
+        $extension = $this->resolveClosure($closure, [ $object ]);
+
+        if ($this->isShared($key)) {
+            $this->instances[$key] = $extension;
+        }
+
+        return $extension;
     }
 
     /**
@@ -202,7 +308,7 @@ class Container implements ArrayAccess
         $reflect = new ReflectionClass($class);
 
         if (! $reflect->isInstantiable()) {
-            throw new Exception(sprintf('"%s" is not instantiable.', $class));
+            throw new InvalidArgumentException(sprintf('"%s" is not instantiable.', $class));
         }
 
         if (! is_null($reflect->getConstructor())) {
@@ -243,17 +349,6 @@ class Container implements ArrayAccess
     }
 
     /**
-     * Assings a value into a binding.
-     * @param string $key
-     * @param mixed $value
-     * @return mixed
-     */
-    protected function setValue($key, $value)
-    {
-        return $this->bindings[$key]['value'] = $value;
-    }
-
-    /**
      * Gets the value of a given binding.
      * @param  string $key
      * @return mixed
@@ -264,13 +359,23 @@ class Container implements ArrayAccess
     }
 
     /**
+     * Checks if a binding is resolved.
+     * @param  string $key
+     * @return boolean
+     */
+    protected function isResolved($key)
+    {
+        return isset($this->resolved[$key]) ? $this->resolved[$key] : false;
+    }
+
+    /**
      * Checks if the given binding is a shared instance.
      * @param  string $key
      * @return boolean
      */
     protected function isShared($key)
     {
-        return $this->has($key) && $this->bindings[$key]['shared'] === true;
+        return isset($this->bindings[$key]['shared']) ? $this->bindings[$key]['shared'] : false;
     }
 
     /**
@@ -281,6 +386,16 @@ class Container implements ArrayAccess
     protected function hasMissingBackslash($key)
     {
         return substr($key, 0, 1) === '\\';
+    }
+
+    /**
+     * Checks if an object is an instance of a Closure.
+     * @param  object $object
+     * @return boolean
+     */
+    protected function isClosure($object)
+    {
+        return $object instanceof Closure ? true : false;
     }
 
     /**
@@ -406,9 +521,11 @@ class Container implements ArrayAccess
     public function keys()
     {
         return array(
-            'bindings'  => $this->bindings,
-            'instances' => $this->instances,
-            'protected' => $this->protected,
+            'bindings'   => $this->bindings,
+            'resolved'   => $this->resolved,
+            'instances'  => $this->instances,
+            'extensions' => $this->extensions,
+            'protected'  => $this->protected,
         );
     }
 }

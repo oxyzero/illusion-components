@@ -151,8 +151,25 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $barInstance  = $this->c->resolve('bar');
         $barInstance2 = $this->c->resolve('bar');
 
-        $this->assertTrue($fooInstance === $fooInstance2);
-        $this->assertTrue($barInstance === $barInstance2);
+        $this->assertSame($fooInstance, $fooInstance2);
+        $this->assertSame($barInstance, $barInstance2);
+    }
+
+    public function testDeleteSharedInstances()
+    {
+        $this->c->singleton('foo', '\Foo');
+        $this->c->share('bar', '\Bar');
+
+        $fooInstance  = $this->c->resolve('foo');
+        $this->c->deleteInstance('foo');
+        $fooInstance2 = $this->c->resolve('foo');
+
+        $barInstance  = $this->c->resolve('bar');
+        $this->c->deleteInstance('bar');
+        $barInstance2 = $this->c->resolve('bar');
+
+        $this->assertNotSame($fooInstance, $fooInstance2);
+        $this->assertNotSame($barInstance, $barInstance2);
     }
 
     public function testBindAlreadyInstantiatedObject()
@@ -167,8 +184,6 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testExtendingServices()
     {
         $this->c->register('bar', '\Bar');
-
-        $this->c->resolve('bar');
 
         $this->c->extend('bar', function($bar, $c) {
             $bar->set(5);
