@@ -75,18 +75,26 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     public function testBindingValue()
     {
         $this->c->register('foo', 'Bar');
-        $this->assertEquals(['value' => '\Bar', 'shared' => false], $this->c->get('foo'));
+
+        $expect = ['value' => '\Bar', 'shared' => false];
+
+        $binding = $this->c->get('foo');
+
+        $this->assertEquals($expect, $binding);
     }
 
     public function testReturningNullWhenBindingDoesnExist()
     {
-        $this->assertNull($this->c->get('qux'));
+        $binding = $this->c->get('qux');
+        $this->assertNull($binding);
     }
 
     public function testResolveBindingWithNoValue()
     {
         $this->c->register('Foo');
-        $this->assertInstanceOf('Foo', $this->c->resolve('Foo'));
+        $resolve = $this->c->resolve('Foo');
+
+        $this->assertInstanceOf('Foo', $resolve);
     }
 
     public function testDirectResolve()
@@ -106,14 +114,18 @@ class ContainerTest extends PHPUnit_Framework_TestCase
             return new Foo;
         });
 
-        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
+        $fooResolve = $this->c->resolve('foo');
+
+        $this->assertInstanceOf('Foo', $fooResolve);
 
         $this->c->register('bar', function() {
             $foo = new Foo;
             return new Bar($foo);
         });
 
-        $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
+        $barResolve = $this->c->resolve('bar');
+
+        $this->assertInstanceOf('Bar', $barResolve);
     }
 
     public function testClosureResolveWithParameter()
@@ -123,7 +135,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
             return new Bar($container->resolve('foo'));
         });
 
-        $this->assertInstanceOf('Bar', $this->c->resolve('bar'));
+        $resolve = $this->c->resolve('bar');
+
+        $this->assertInstanceOf('Bar', $resolve);
     }
 
     public function testSharedInstances()
@@ -145,7 +159,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     {
         $foo = new \Foo;
         $this->c->instance('foo', $foo);
-        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
+
+        $resolve = $this->c->resolve('foo');
+        $this->assertInstanceOf('Foo', $resolve);
     }
 
     public function testExtendingServices()
@@ -160,8 +176,11 @@ class ContainerTest extends PHPUnit_Framework_TestCase
             return $bar;
         });
 
-        $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
-        $this->assertEquals(5, $this->c['bar']->get());
+        $resolve = $this->c->resolve('foo');
+        $barGetValue = $this->c->bar->get();
+
+        $this->assertInstanceOf('Foo', $resolve);
+        $this->assertEquals(5, $barGetValue);
     }
 
     public function testPassingValuesThroughClosure()
@@ -171,7 +190,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
             return new \Bar(new Foo, $number);
         });
 
-        $this->assertEquals(4, $this->c->resolve('bar', [2])->get());
+        $barGetValue = $this->c->resolve('bar', [2])->get();
+
+        $this->assertEquals(4, $barGetValue);
     }
 
     public function testProtectedParameters()
@@ -180,7 +201,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
             return 'foo';
         });
 
-        $this->assertEquals('foo', $this->c->getProtected('Foo'));
+        $protected = $this->c->getProtected('Foo');
+
+        $this->assertEquals('foo', $protected);
     }
 
     public function testProtectedParametersWithArguments()
