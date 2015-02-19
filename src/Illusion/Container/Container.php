@@ -26,15 +26,6 @@ class Container implements ArrayAccess
     protected $protected = [];
 
     /**
-     * Instanciates a new Container.
-     * @param array $args
-     */
-    public function __construct($args = [])
-    {
-        $this->bindings = $args;
-    }
-
-    /**
      * Registers a binding in the Container.
      * @param  string $key
      * @param  mixed  $value
