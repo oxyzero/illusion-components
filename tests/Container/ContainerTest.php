@@ -157,4 +157,24 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(4, $this->c->resolve('bar', [2])->get());
     }
 
+    public function testProtectedParameters()
+    {
+        $this->c->protect('Foo', function() {
+            return 'foo';
+        });
+
+        $this->assertEquals('foo', $this->c->getProtected('Foo'));
+    }
+
+    public function testProtectedParametersWithArguments()
+    {
+        $this->c->register('Foo');
+        $this->c->protect('bar', function($value, $c) {
+            return $c['Foo']->give(2) * $value;
+        });
+
+        $protected = $this->c->getProtected('bar', [ 2 ]);
+
+        $this->assertEquals(4, $protected);
+    }
 }

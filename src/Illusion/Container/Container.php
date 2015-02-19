@@ -21,6 +21,11 @@ class Container implements ArrayAccess
     protected $instances = [];
 
     /**
+     * The registered protected parameters.
+     */
+    protected $protected = [];
+
+    /**
      * Instanciates a new Container.
      * @param array $args
      */
@@ -108,6 +113,7 @@ class Container implements ArrayAccess
             $this->instances[$key] = $object;
         }
 
+
         return $this->setValue($key, $object);
     }
 
@@ -126,6 +132,37 @@ class Container implements ArrayAccess
         if ($shared) {
             $this->instances[$key] = $instance;
         }
+    }
+
+    /**
+     * Registers a protected parameter in the container.
+     * @param  string $key
+     * @param  mixed $closure
+     * @return void
+     */
+    public function protect($key, $closure)
+    {
+        $this->protected[$key] = $closure;
+    }
+
+    /**
+     * Returns a protected parameter if it exists.
+     * @param  string $key
+     * @return mixed
+     */
+    public function getProtected($key, $args = [])
+    {
+        $object = $this->protected[$key];
+
+        if (! isset($object)) {
+            return null;
+        }
+
+        if ($object instanceof Closure) {
+            $object = $this->resolveClosure($object, $args);
+        }
+
+        return $object;
     }
 
     /**
