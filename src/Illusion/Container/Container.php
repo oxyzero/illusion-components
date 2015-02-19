@@ -368,4 +368,56 @@ class Container implements ArrayAccess
     {
         $this->delete($key);
     }
+
+    /**
+     * Dynamically access the binding value.
+     * @param  string $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return $this->resolve($key);
+    }
+
+    /**
+     * Dynamically set the binding value.
+     * @param string $key
+     * @param mixed $value
+     */
+    public function __set($key, $value = null)
+    {
+        $this->register($key, $value, false);
+    }
+
+    /**
+     * Dynamically checks if a binding exists.
+     * @param  string $key
+     * @return boolean
+     */
+    public function __isset($key)
+    {
+        return $this->has($key);
+    }
+
+    /**
+     * Dynamically delete a binding.
+     * @param string $key
+     */
+    public function __unset($key)
+    {
+        $this->delete($key);
+    }
+
+    /**
+     * Returns all keys within the container.
+     * @return array
+     */
+    public function keys()
+    {
+        return array(
+            'bindings'  => $this->bindings,
+            'instances' => $this->instances,
+            'protected' => $this->protected,
+        );
+    }
 }

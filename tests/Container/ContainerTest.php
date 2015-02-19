@@ -49,6 +49,23 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($this->c->has('foo'));
     }
 
+    public function testDynamicallyCallingServices()
+    {
+        $this->c->foo = '\Foo';
+        $this->c->bar = function($c) {
+            return new \Bar($c->foo);
+        };
+
+        $this->assertTrue(isset($this->c->foo));
+        $this->assertTrue(isset($this->c->bar));
+        $this->assertInstanceOf('Foo', $this->c->foo);
+        $this->assertInstanceOf('Bar', $this->c->bar);
+
+        unset($this->c->foo, $this->c->bar);
+        $this->assertFalse(isset($this->c->foo));
+        $this->assertFalse(isset($this->c->bar));
+    }
+
     public function testIfBindingExists()
     {
         $this->c->register('foo', 'Bar');
