@@ -148,6 +148,7 @@ class Container implements ArrayAccess
     /**
      * Returns a protected parameter if it exists.
      * @param  string $key
+     * @param  array $array
      * @return mixed
      */
     public function getProtected($key, $args = [])
