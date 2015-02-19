@@ -97,10 +97,10 @@ class Container implements ArrayAccess
         }
 
         if (is_string($object)) {
-            $object = $this->resolveClass($object);
+            $object = $this->resolveClass($object, $args);
         } else {
             if ($object instanceof Closure) {
-                $object = $this->resolveClosure($object);
+                $object = $this->resolveClosure($object, $args);
             }
         }
 
@@ -168,10 +168,8 @@ class Container implements ArrayAccess
      * @param array  $args
      * @return mixed
      */
-    protected function resolveClass($class)
+    protected function resolveClass($class, $args)
     {
-        $args = [];
-
         $reflect = new ReflectionClass($class);
 
         if (! $reflect->isInstantiable()) {

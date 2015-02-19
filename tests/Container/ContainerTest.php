@@ -10,8 +10,8 @@ class Foo {
 class Bar {
     protected $qux;
 
-    public function __construct(\Foo $foo) {
-        $this->set($foo->give(1));
+    public function __construct(\Foo $foo, $number = 1) {
+        $this->set($foo->give($number));
     }
 
     public function get()
@@ -145,6 +145,16 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
         $this->assertInstanceOf('Foo', $this->c->resolve('foo'));
         $this->assertEquals(5, $this->c['bar']->get());
+    }
+
+    public function testPassingValuesThroughClosure()
+    {
+        $this->c->register('bar', function($number, $c) {
+            $number *= 2;
+            return new \Bar(new Foo, $number);
+        });
+
+        $this->assertEquals(4, $this->c->resolve('bar', [2])->get());
     }
 
 }
