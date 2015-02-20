@@ -482,7 +482,7 @@ class Container implements ArrayAccess
      */
     public function __get($key)
     {
-        return $this->resolve($key);
+        return $this[$key];
     }
 
     /**
@@ -492,7 +492,7 @@ class Container implements ArrayAccess
      */
     public function __set($key, $value = null)
     {
-        $this->register($key, $value, false);
+        $this[$key] = $value;
     }
 
     /**
@@ -502,7 +502,7 @@ class Container implements ArrayAccess
      */
     public function __isset($key)
     {
-        return $this->has($key);
+        return isset($this[$key]);
     }
 
     /**
@@ -511,7 +511,7 @@ class Container implements ArrayAccess
      */
     public function __unset($key)
     {
-        $this->delete($key);
+        unset($this[$key]);
     }
 
     /**
