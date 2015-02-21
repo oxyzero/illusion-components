@@ -116,7 +116,7 @@ class Container implements ArrayAccess
         $object = $this->build($object, $args);
 
         // Apply all of the extensions into the object.
-        foreach($this->getExtensions($key) as $extension) {
+        foreach ($this->getExtensions($key) as $extension) {
             $object = $this->resolveClosure($extension, [ $object ]);
         }
 
