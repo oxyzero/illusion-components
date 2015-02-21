@@ -58,9 +58,7 @@ class Container implements ArrayAccess
         // If the value is a string
         // then we're going to interpret it as a namespace
         // that points into a class.
-        if (is_string($value) && ! $this->hasMissingBackSlash($value)) {
-            $value = '\\' . $value;
-        }
+        $value = $this->handleMissingBackslash($value);
 
         $this->bindings[$key] = compact('value', 'shared');
     }
@@ -103,7 +101,7 @@ class Container implements ArrayAccess
 
         $object = $this->getValue($key);
 
-        if ($object === null) {
+        if (is_null($object)) {
             $object = $key;
         }
 
@@ -441,6 +439,20 @@ class Container implements ArrayAccess
     protected function isShared($key)
     {
         return isset($this->bindings[$key]['shared']) ? $this->bindings[$key]['shared'] : false;
+    }
+
+    /**
+     * Fixes the missing backslash on class names.
+     * @param  string $key
+     * @return mixed
+     */
+    protected function handleMissingBackslash($key)
+    {
+        if (is_string($key) && ! $this->hasMissingBackSlash($key)) {
+            $key = '\\' . $key;
+        }
+
+        return $key;
     }
 
     /**
