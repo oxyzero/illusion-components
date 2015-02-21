@@ -1,16 +1,36 @@
 <?php
 
-class Foo {
+class Foobar
+{
+    protected $value;
+
+    public function set(\Foo $foo)
+    {
+        $this->value = $foo->give(1);
+
+        return true;
+    }
+
+    public function get()
+    {
+        return $this->value;
+    }
+}
+
+class Foo
+{
     public function give($amount)
     {
         return $amount;
     }
 }
 
-class Bar {
+class Bar
+{
     protected $qux;
 
-    public function __construct(\Foo $foo, $number = 1) {
+    public function __construct(\Foo $foo, $number = 1)
+    {
         $this->set($foo->give($number));
     }
 
@@ -19,7 +39,8 @@ class Bar {
         return $this->qux;
     }
 
-    public function set($qux) {
+    public function set($qux)
+    {
         $this->qux = $qux;
     }
 }
@@ -231,5 +252,12 @@ class ContainerTest extends PHPUnit_Framework_TestCase
         $protected = $this->c->getProtected('bar', [ 2 ]);
 
         $this->assertEquals(4, $protected);
+    }
+
+    public function testResolvingMethods()
+    {
+        $method = $this->c->method('Foobar@set');
+
+        $this->assertTrue($method);
     }
 }

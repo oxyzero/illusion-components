@@ -5,6 +5,7 @@ namespace Illusion\Container;
 use Closure;
 use ArrayAccess;
 use ReflectionClass;
+use ReflectionMethod;
 use InvalidArgumentException;
 
 class Container implements ArrayAccess
@@ -369,6 +370,50 @@ class Container implements ArrayAccess
     }
 
     /**
+     * Calls method and instantiates all of its dependencies.
+     * @param  string $key
+     * @return mixed
+     */
+    public function method($key)
+    {
+        list($class, $method) = explode('@', $key);
+
+        $class = $this->resolveClass($class);
+
+        $method = $this->resolveMethod($class, $method);
+
+        return $method;
+    }
+
+    /**
+     * Resolves a method.
+     * @param  object $class
+     * @param  string $method
+     * @return mixed
+     */
+    protected function resolveMethod($class, $method)
+    {
+        $method = new ReflectionMethod($class, $method);
+
+        $parameters = $method->getParameters();
+        $methodDependencies = [];
+
+        foreach ($parameters as $parameter) {
+            if ($parameter->isArray() || $parameter->isOptional()) {
+                continue;
+            }
+
+            $dependency = $parameter->getClass();
+
+            if (! is_null($dependency)) {
+                $methodDependencies[] = $this->resolve($dependency->name);
+            }
+        }
+
+        return $method->invokeArgs($class, $methodDependencies);
+    }
+
+    /**
      * Gets the value of a given binding.
      * @param  string $key
      * @return mixed
@@ -449,9 +494,7 @@ class Container implements ArrayAccess
      */
     public function delete($key)
     {
-        if ($this->has($key)) {
-            unset($this->bindings[$key]);
-        }
+        unset($this->bindings[$key], $this->instances[$key], $this->resolved[$key]);
     }
 
     /**
