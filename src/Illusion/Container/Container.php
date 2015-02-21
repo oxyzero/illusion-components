@@ -303,33 +303,50 @@ class Container implements ArrayAccess
      * @param array  $args
      * @return mixed
      */
-    protected function resolveClass($class, $args)
+    protected function resolveClass($class, $args = [])
     {
-        $reflect = new ReflectionClass($class);
+        $class = new ReflectionClass($class);
 
-        if (! $reflect->isInstantiable()) {
+        $dependencies = $this->getClassDependencies($class);
+
+        foreach ($dependencies as $dependency) {
+            $args[] = $this->resolve($dependency);
+        }
+
+        return $class->newInstanceArgs($args);
+    }
+
+    /**
+     * Builds the dependencies needed to resolve a class.
+     * @param  ReflectionClass $class
+     * @return array
+     */
+    protected function getClassDependencies(ReflectionClass $class)
+    {
+        if (! $class->isInstantiable()) {
             throw new InvalidArgumentException(sprintf('"%s" is not instantiable.', $class));
         }
 
-        if (! is_null($reflect->getConstructor())) {
-            $dependencies = $reflect->getConstructor()->getParameters();
+        $classDependencies = [];
+        $constructor = $class->getConstructor();
+
+        if (! is_null($constructor)) {
+            $dependencies = $constructor->getParameters();
 
             foreach ($dependencies as $dependency) {
                 if ($dependency->isArray() || $dependency->isOptional()) {
                     continue;
                 }
 
-                $class = $dependency->getClass();
+                $classDependency = $dependency->getClass();
 
-                if (is_null($class)) {
-                    continue;
+                if (! is_null($class)) {
+                    $classDependencies[] = $classDependency->name;
                 }
-
-                array_unshift($args, $this->resolve($class->name));
             }
         }
 
-        return $reflect->newInstanceArgs($args);
+        return $classDependencies;
     }
 
     /**
