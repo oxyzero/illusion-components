@@ -327,22 +327,25 @@ class Container implements ArrayAccess
             throw new InvalidArgumentException(sprintf('"%s" is not instantiable.', $class));
         }
 
-        $classDependencies = [];
         $constructor = $class->getConstructor();
 
-        if (! is_null($constructor)) {
-            $dependencies = $constructor->getParameters();
+        // If there is no constructor, then we don't need to inject dependencies.
+        if (is_null($constructor)) {
+            return [];
+        }
 
-            foreach ($dependencies as $dependency) {
-                if ($dependency->isArray() || $dependency->isOptional()) {
-                    continue;
-                }
+        $classDependencies = [];
+        $dependencies = $constructor->getParameters();
 
-                $classDependency = $dependency->getClass();
+        foreach ($dependencies as $dependency) {
+            if ($dependency->isArray() || $dependency->isOptional()) {
+                continue;
+            }
 
-                if (! is_null($class)) {
-                    $classDependencies[] = $classDependency->name;
-                }
+            $classDependency = $dependency->getClass();
+
+            if (! is_null($class)) {
+                $classDependencies[] = $classDependency->name;
             }
         }
 
