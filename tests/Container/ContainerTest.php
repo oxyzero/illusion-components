@@ -1,59 +1,22 @@
 <?php
 
-class Foobar
-{
-    protected $value;
-
-    public function set(\Foo $foo)
-    {
-        $this->value = $foo->give(1);
-
-        return true;
-    }
-
-    public function get()
-    {
-        return $this->value;
-    }
-}
-
-class Foo
-{
-    public function give($amount)
-    {
-        return $amount;
-    }
-}
-
-class Bar
-{
-    protected $qux;
-
-    public function __construct(\Foo $foo, $number = 1)
-    {
-        $this->set($foo->give($number));
-    }
-
-    public function get()
-    {
-        return $this->qux;
-    }
-
-    public function set($qux)
-    {
-        $this->qux = $qux;
-    }
-}
+// Test classes
+use Tests\Container\Services\Foo;
+use Tests\Container\Services\Bar;
 
 use Illusion\Container\Container;
 
 class ContainerTest extends PHPUnit_Framework_TestCase
 {
     private $c;
+    private $barNamespace;
+    private $fooNamespace;
 
     public function setUp()
     {
         $this->c = new Container;
+        $this->barNamespace = 'Tests\Container\Services\Bar';
+        $this->fooNamespace = 'Tests\Container\Services\Foo';
     }
 
     public function tearDown()
@@ -63,8 +26,8 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testOffsets()
     {
-        $this->c['foo'] = 'bar';
-        $this->assertInstanceOf('\Bar', $this->c['foo']);
+        $this->c['foo'] = $this->barNamespace;
+        $this->assertInstanceOf($this->barNamespace, $this->c['foo']);
         $this->assertTrue($this->c->has('foo'));
         unset($this->c['foo']);
         $this->assertFalse($this->c->has('foo'));
@@ -72,15 +35,15 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testDynamicallyCallingServices()
     {
-        $this->c->foo = '\Foo';
+        $this->c->foo = $this->fooNamespace;
         $this->c->bar = function($c) {
-            return new \Bar($c->foo);
+            return new Bar($c->foo);
         };
 
         $this->assertTrue(isset($this->c->foo));
         $this->assertTrue(isset($this->c->bar));
-        $this->assertInstanceOf('Foo', $this->c->foo);
-        $this->assertInstanceOf('Bar', $this->c->bar);
+        $this->assertInstanceOf($this->fooNamespace, $this->c->foo);
+        $this->assertInstanceOf($this->barNamespace, $this->c->bar);
 
         unset($this->c->foo, $this->c->bar);
         $this->assertFalse(isset($this->c->foo));
@@ -89,15 +52,15 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testIfBindingExists()
     {
-        $this->c->register('foo', 'Bar');
+        $this->c->register('foo', $this->barNamespace);
         $this->assertTrue($this->c->has('foo'));
     }
 
     public function testBindingValue()
     {
-        $this->c->register('foo', 'Bar');
+        $this->c->register('foo', $this->barNamespace);
 
-        $expect = ['value' => '\Bar', 'shared' => false];
+        $expect = ['value' => '\\' . $this->barNamespace, 'shared' => false];
 
         $binding = $this->c->get('foo');
 
@@ -112,21 +75,21 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testResolveBindingWithNoValue()
     {
-        $this->c->register('Foo');
-        $resolve = $this->c->resolve('Foo');
+        $this->c->register($this->fooNamespace);
+        $resolve = $this->c->resolve($this->fooNamespace);
 
-        $this->assertInstanceOf('Foo', $resolve);
+        $this->assertInstanceOf($this->fooNamespace, $resolve);
     }
 
     public function testDirectResolve()
     {
-        $this->c->register('foo', 'Foo');
+        $this->c->register('foo', $this->fooNamespace);
         $fooInstance = $this->c->resolve('foo');
-        $this->assertInstanceOf('Foo', $fooInstance);
+        $this->assertInstanceOf($this->fooNamespace, $fooInstance);
 
-        $this->c->register('bar', 'Bar');
+        $this->c->register('bar', $this->barNamespace);
         $barInstance = $this->c->resolve('bar');
-        $this->assertInstanceOf('Bar', $barInstance);
+        $this->assertInstanceOf($this->barNamespace, $barInstance);
     }
 
     public function testClosureResolve()
@@ -137,34 +100,33 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
         $fooResolve = $this->c->resolve('foo');
 
-        $this->assertInstanceOf('Foo', $fooResolve);
+        $this->assertInstanceOf($this->fooNamespace, $fooResolve);
 
-        $this->c->register('bar', function() {
-            $foo = new Foo;
-            return new Bar($foo);
+        $this->c->register('bar', function($c) {
+            return new Bar($c->foo);
         });
 
         $barResolve = $this->c->resolve('bar');
 
-        $this->assertInstanceOf('Bar', $barResolve);
+        $this->assertInstanceOf($this->barNamespace, $barResolve);
     }
 
     public function testClosureResolveWithParameter()
     {
         $this->c->register('bar', function($container) {
-            $container->register('foo', 'Foo');
+            $container->register('foo', $this->fooNamespace);
             return new Bar($container->resolve('foo'));
         });
 
         $resolve = $this->c->resolve('bar');
 
-        $this->assertInstanceOf('Bar', $resolve);
+        $this->assertInstanceOf($this->barNamespace, $resolve);
     }
 
     public function testSharedInstances()
     {
-        $this->c->singleton('foo', '\Foo');
-        $this->c->share('bar', '\Bar');
+        $this->c->singleton('foo', $this->fooNamespace);
+        $this->c->share('bar', $this->barNamespace);
 
         $fooInstance  = $this->c->resolve('foo');
         $fooInstance2 = $this->c->resolve('foo');
@@ -178,8 +140,8 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testDeleteSharedInstances()
     {
-        $this->c->singleton('foo', '\Foo');
-        $this->c->share('bar', '\Bar');
+        $this->c->singleton('foo', $this->fooNamespace);
+        $this->c->share('bar', $this->barNamespace);
 
         $fooInstance  = $this->c->resolve('foo');
         $this->c->deleteInstance('foo');
@@ -195,27 +157,27 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testBindAlreadyInstantiatedObject()
     {
-        $foo = new \Foo;
+        $foo = new Foo;
         $this->c->instance('foo', $foo);
 
         $resolve = $this->c->resolve('foo');
-        $this->assertInstanceOf('Foo', $resolve);
+        $this->assertInstanceOf($this->fooNamespace, $resolve);
     }
 
     public function testExtendingServices()
     {
-        $this->c->register('bar', '\Bar');
+        $this->c->register('bar', $this->barNamespace);
 
         $this->c->extend('bar', function($bar, $c) {
             $bar->set(5);
-            $c->register('foo', '\Foo');
+            $c->register('foo', $this->fooNamespace);
             return $bar;
         });
 
         $resolve = $this->c->resolve('foo');
         $barGetValue = $this->c->bar->get();
 
-        $this->assertInstanceOf('Foo', $resolve);
+        $this->assertInstanceOf($this->fooNamespace, $resolve);
         $this->assertEquals(5, $barGetValue);
     }
 
@@ -223,7 +185,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
     {
         $this->c->register('bar', function($number, $c) {
             $number *= 2;
-            return new \Bar(new Foo, $number);
+            return new Bar(new Foo, $number);
         });
 
         $barGetValue = $this->c->resolve('bar', [2])->get();
@@ -244,9 +206,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testProtectedParametersWithArguments()
     {
-        $this->c->register('Foo');
+        $this->c->register($this->fooNamespace);
         $this->c->protect('bar', function($value, $c) {
-            return $c['Foo']->give(2) * $value;
+            return $c[$this->fooNamespace]->give(2) * $value;
         });
 
         $protected = $this->c->getProtected('bar', [ 2 ]);
@@ -256,8 +218,8 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
     public function testResolvingMethods()
     {
-        $method = $this->c->method('Foobar@set');
+        $method = $this->c->method($this->barNamespace . '@get');
 
-        $this->assertTrue($method);
+        $this->assertEquals(1, $method);
     }
 }

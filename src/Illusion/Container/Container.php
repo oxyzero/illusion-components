@@ -448,7 +448,7 @@ class Container implements ArrayAccess
      */
     protected function handleMissingBackslash($key)
     {
-        if (is_string($key) && ! $this->hasMissingBackSlash($key)) {
+        if (is_string($key) && ! $this->hasMissingBackslash($key)) {
             $key = '\\' . $key;
         }
 

@@ -19,5 +19,11 @@
         "psr-4": {
             "Illusion\\": "src/Illusion/"
         }
+    },
+
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
     }
 }
