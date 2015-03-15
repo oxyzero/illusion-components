@@ -222,4 +222,11 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(1, $method);
     }
+
+    public function testResolvingMethodsWithParameters()
+    {
+        $method = $this->c->method($this->fooNamespace . '@give', [5]);
+
+        $this->assertEquals(5, $method);
+    }
 }

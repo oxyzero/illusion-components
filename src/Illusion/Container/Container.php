@@ -370,17 +370,17 @@ class Container implements ArrayAccess
     /**
      * Calls method and instantiates all of its dependencies.
      * @param  string $key
+     * @param  array $args
+     * @param  array $classArgs
      * @return mixed
      */
-    public function method($key)
+    public function method($key, $args = [], $classArgs = [])
     {
         list($class, $method) = explode('@', $key);
 
-        $class = $this->resolveClass($class);
+        $class = $this->resolveClass($class, $classArgs);
 
-        $method = $this->resolveMethod($class, $method);
-
-        return $method;
+        return $this->resolveMethod($class, $method, $args);
     }
 
     /**
@@ -389,7 +389,7 @@ class Container implements ArrayAccess
      * @param  string $method
      * @return mixed
      */
-    protected function resolveMethod($class, $method)
+    protected function resolveMethod($class, $method, $args = [])
     {
         $method = new ReflectionMethod($class, $method);
 
@@ -397,13 +397,15 @@ class Container implements ArrayAccess
         $methodDependencies = [];
 
         foreach ($parameters as $parameter) {
-            if ($parameter->isArray() || $parameter->isOptional()) {
-                continue;
-            }
 
             $dependency = $parameter->getClass();
 
-            if (! is_null($dependency)) {
+            // If there is no class associated with the parameter, then
+            // we have to give it an argument..
+            if (is_null($dependency)) {
+                $methodDependencies[] = array_shift($args);
+            } else {
+                // Otherwise, we resolve the class associated.
                 $methodDependencies[] = $this->resolve($dependency->name);
             }
         }
