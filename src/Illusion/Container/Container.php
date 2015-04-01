@@ -12,38 +12,45 @@ class Container implements ArrayAccess
 {
     /**
      * The registered bindings.
+     *
      * @var array
      */
     protected $bindings = [];
 
     /**
      * The registered shared instances.
+     *
      * @var array
      */
     protected $instances = [];
 
     /**
      * The registered protected parameters.
+     *
      * @var array
      */
     protected $protected = [];
 
     /**
      * The registered resolved bindings.
+     *
      * @var array
      */
     protected $resolved = [];
 
     /**
      * The registered binding extensions.
+     *
      * @var array
      */
     protected $extensions = [];
 
     /**
      * Registers a binding in the Container.
+     *
      * @param  string $key
      * @param  mixed  $value
+     *
      * @return void
      */
     public function register($key, $value = null, $shared = false)
@@ -65,8 +72,10 @@ class Container implements ArrayAccess
 
     /**
      * Generate a binding that has a shared instance.
+     *
      * @param  string $key
      * @param  mixed $value
+     *
      * @return void
      */
     public function singleton($key, $value = null)
@@ -77,9 +86,12 @@ class Container implements ArrayAccess
     /**
      * Alias of singleton.
      * Generate a binding that has a shared instance.
+     *
      * @param  string $key
      * @param  mixed $value
+     *
      * @return void
+     *
      * @see singleton()
      */
     public function share($key, $value = null)
@@ -89,8 +101,10 @@ class Container implements ArrayAccess
 
     /**
      * Resolves a binding in the Container.
+     *
      * @param  string $key
      * @param  array  $args
+     *
      * @return mixed
      */
     public function resolve($key, $args = [])
@@ -130,7 +144,9 @@ class Container implements ArrayAccess
 
     /**
      * Get the extensions of a given binding.
+     *
      * @param  string $key
+     *
      * @return array
      */
     protected function getExtensions($key)
@@ -140,7 +156,9 @@ class Container implements ArrayAccess
 
     /**
      * Returns the class name of an instance.
+     *
      * @param  object $class
+     *
      * @return string
      */
     protected function getClassName($class)
@@ -152,7 +170,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if the given value is buildable.
+     *
      * @param  mixed $key
+     *
      * @return boolean
      */
     protected function isBuildable($value)
@@ -162,8 +182,10 @@ class Container implements ArrayAccess
 
     /**
      * Builds an instance.
+     *
      * @param  mixed $key
      * @param  array $args
+     *
      * @return mixed
      */
     protected function build($key, $args = [])
@@ -178,9 +200,11 @@ class Container implements ArrayAccess
     /**
      * Registers an already defined instance as
      * a shared instance in the container.
+     *
      * @param  string $key
      * @param  object $instance
      * @param  boolean $shared
+     *
      * @return void
      */
     public function instance($key, $instance, $shared = true)
@@ -195,7 +219,9 @@ class Container implements ArrayAccess
     /**
      * Removes an instance from the container to allow
      * to instantiate it again.
+     *
      * @param  string $key
+     *
      * @return void
      */
     public function deleteInstance($key)
@@ -206,6 +232,7 @@ class Container implements ArrayAccess
     /**
      * Removes all instances from the container to allow
      * to instantiate them again.
+     *
      * @return void
      */
     public function deleteInstances()
@@ -215,6 +242,7 @@ class Container implements ArrayAccess
 
     /**
      * Releases all of the bindings and instances.
+     *
      * @return void
      */
     public function flush()
@@ -228,8 +256,10 @@ class Container implements ArrayAccess
 
     /**
      * Registers a protected parameter in the container.
+     *
      * @param  string $key
      * @param  mixed $closure
+     *
      * @return void
      */
     public function protect($key, $closure)
@@ -239,8 +269,10 @@ class Container implements ArrayAccess
 
     /**
      * Returns a protected parameter if it exists.
+     *
      * @param  string $key
      * @param  array $array
+     *
      * @return mixed
      */
     public function getProtected($key, $args = [])
@@ -260,8 +292,10 @@ class Container implements ArrayAccess
 
     /**
      * Extend a binding.
+     *
      * @param  string $key
-     * @param  Closure $closure [description]
+     * @param  Closure $closure
+     *
      * @return mixed
      */
     public function extend($key, $closure)
@@ -300,6 +334,7 @@ class Container implements ArrayAccess
      *
      * @param string $class
      * @param array  $args
+     *
      * @return mixed
      */
     protected function resolveClass($class, $args = [])
@@ -317,7 +352,9 @@ class Container implements ArrayAccess
 
     /**
      * Builds the dependencies needed to resolve a class.
+     *
      * @param  ReflectionClass $class
+     *
      * @return array
      */
     protected function getClassDependencies(ReflectionClass $class)
@@ -356,6 +393,7 @@ class Container implements ArrayAccess
      *
      * @param object $class
      * @param array  $args
+     *
      * @return mixed
      */
     protected function resolveClosure($callback, $args = [])
@@ -369,9 +407,11 @@ class Container implements ArrayAccess
 
     /**
      * Calls method and instantiates all of its dependencies.
+     *
      * @param  string $key
      * @param  array $args
      * @param  array $classArgs
+     *
      * @return mixed
      */
     public function method($key, $args = [], $classArgs = [])
@@ -385,8 +425,10 @@ class Container implements ArrayAccess
 
     /**
      * Resolves a method.
+     *
      * @param  object $class
      * @param  string $method
+     *
      * @return mixed
      */
     protected function resolveMethod($class, $method, $args = [])
@@ -397,7 +439,6 @@ class Container implements ArrayAccess
         $methodDependencies = [];
 
         foreach ($parameters as $parameter) {
-
             $dependency = $parameter->getClass();
 
             // If there is no class associated with the parameter, then
@@ -415,7 +456,9 @@ class Container implements ArrayAccess
 
     /**
      * Gets the value of a given binding.
+     *
      * @param  string $key
+     *
      * @return mixed
      */
     protected function getValue($key)
@@ -425,7 +468,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if a binding is resolved.
+     *
      * @param  string $key
+     *
      * @return boolean
      */
     protected function isResolved($key)
@@ -435,7 +480,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if the given binding is a shared instance.
+     *
      * @param  string $key
+     *
      * @return boolean
      */
     protected function isShared($key)
@@ -445,7 +492,9 @@ class Container implements ArrayAccess
 
     /**
      * Fixes the missing backslash on class names.
+     *
      * @param  string $key
+     *
      * @return mixed
      */
     protected function handleMissingBackslash($key)
@@ -459,7 +508,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if a binding class has a missing backslash.
+     *
      * @param  string $key
+     *
      * @return boolean
      */
     protected function hasMissingBackslash($key)
@@ -469,7 +520,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if an object is an instance of a Closure.
+     *
      * @param  object $object
+     *
      * @return boolean
      */
     protected function isClosure($object)
@@ -479,7 +532,9 @@ class Container implements ArrayAccess
 
     /**
      * Gets a given binding value.
+     *
      * @param  string $key
+     *
      * @return mixed
      */
     public function get($key)
@@ -493,7 +548,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if the Container has a given binding.
+     *
      * @param  string $key
+     *
      * @return boolean
      */
     public function has($key)
@@ -503,7 +560,9 @@ class Container implements ArrayAccess
 
     /**
      * Removes an given binding from the Container it it exists.
+     *
      * @param  string $key
+     *
      * @return void
      */
     public function delete($key)
@@ -513,7 +572,9 @@ class Container implements ArrayAccess
 
     /**
      * Gets a given binding value.
+     *
      * @param  string $key
+     *
      * @return mixed
      */
     public function offsetGet($key)
@@ -523,8 +584,10 @@ class Container implements ArrayAccess
 
     /**
      * Registers a binding in the Container.
+     *
      * @param  string $key
      * @param  mixed  $value
+     *
      * @return void
      */
     public function offsetSet($key, $value)
@@ -534,7 +597,9 @@ class Container implements ArrayAccess
 
     /**
      * Checks if the Container has a given binding.
+     *
      * @param  string $key
+     *
      * @return boolean
      */
     public function offsetExists($key)
@@ -544,7 +609,9 @@ class Container implements ArrayAccess
 
     /**
      * Removes an given binding from the Container it it exists.
+     *
      * @param  string $key
+     *
      * @return void
      */
     public function offsetUnset($key)
@@ -554,7 +621,9 @@ class Container implements ArrayAccess
 
     /**
      * Dynamically access the binding value.
+     *
      * @param  string $key
+     *
      * @return mixed
      */
     public function __get($key)
@@ -564,6 +633,7 @@ class Container implements ArrayAccess
 
     /**
      * Dynamically set the binding value.
+     *
      * @param string $key
      * @param mixed $value
      */
@@ -574,6 +644,7 @@ class Container implements ArrayAccess
 
     /**
      * Dynamically checks if a binding exists.
+     *
      * @param  string $key
      * @return boolean
      */
@@ -584,6 +655,7 @@ class Container implements ArrayAccess
 
     /**
      * Dynamically delete a binding.
+     *
      * @param string $key
      */
     public function __unset($key)
@@ -593,6 +665,7 @@ class Container implements ArrayAccess
 
     /**
      * Returns all keys within the container.
+     *
      * @return array
      */
     public function keys()
