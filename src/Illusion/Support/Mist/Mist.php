@@ -5,7 +5,7 @@ namespace Illusion\Support\Mist;
 abstract class Mist
 {
     /**
-     * The container instace.
+     * The container instance.
      *
      * @var \Illusion\Container\Container
      */

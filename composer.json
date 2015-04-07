@@ -11,6 +11,11 @@
             "email": "renatofilipe.r7@gmail.com"
         }
     ],
+
+    "require": {
+        "symfony/console": "2.6.*"
+    },
+
     "require-dev": {
         "squizlabs/php_codesniffer": "2.1.*",
         "phpunit/phpunit": "4.5.0"
